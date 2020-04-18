@@ -1,3 +1,6 @@
+/*
+Package psk31 implements the PSK31 digital mode.
+*/
 package psk31
 
 import (
@@ -49,5 +52,41 @@ func Pack(ctx context.Context, packed chan<- uint8, encoded <-chan uint16) {
 		case <-ctx.Done():
 			return
 		}
+	}
+}
+
+// Send reads the packed bits from the given stream and transmits them using the given switchPhase function.
+func Send(ctx context.Context, switchPhase func(), packed <-chan uint8) {
+	var block uint8
+	blockBit := 0
+	for {
+		select {
+		case <-time.After(32 * time.Millisecond):
+			if block == 0 {
+				block = nextBlock(packed)
+				blockBit = 0
+			}
+
+			bit := (block >> uint8(7-blockBit)) & 0x01
+			if bit == 0 {
+				switchPhase()
+			}
+
+			blockBit = (blockBit + 1) % 8
+			if blockBit == 0 {
+				block = nextBlock(packed)
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func nextBlock(packed <-chan uint8) uint8 {
+	select {
+	case b := <-packed:
+		return b
+	default:
+		return 0
 	}
 }

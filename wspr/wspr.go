@@ -7,10 +7,60 @@ Many thanks to Andy/G4JNT for working this out!
 package wspr
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"log"
 	"strings"
 	"time"
 )
+
+// Send transmits the given transmission using the given functions to activate the transmitter and to transmit the symbol.
+func Send(ctx context.Context, activateTransmitter func(bool), transmitSymbol func(Symbol), transmission Transmission) bool {
+	defer activateTransmitter(false)
+	if !waitForTransmitStart(ctx) {
+		return false
+	}
+
+	log.Print("transmission start")
+
+	for i, symbol := range transmission {
+		fmt.Print(".")
+
+		transmitSymbol(symbol)
+		if i == 0 {
+			activateTransmitter(true)
+		}
+
+		select {
+		case <-time.After(SymbolDuration):
+		case <-ctx.Done():
+			return false
+		}
+	}
+
+	fmt.Println()
+	log.Print("transmission end")
+	return true
+}
+
+func waitForTransmitStart(ctx context.Context) bool {
+	for {
+		log.Print("waiting for next transmission cycle")
+		select {
+		case <-ctx.Done():
+			return false
+		case now := <-time.After(1 * time.Second):
+			if isTransmitStart(now) {
+				return true
+			}
+		}
+	}
+}
+
+func isTransmitStart(t time.Time) bool {
+	return t.Minute()%2 == 0 && t.Second() == 0
+}
 
 // Symbol in WSPR. The value represents the delta to the base frequency.
 type Symbol float64

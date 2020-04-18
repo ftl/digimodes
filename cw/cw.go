@@ -1,3 +1,6 @@
+/*
+Package cw implements the CW mode.
+*/
 package cw
 
 import (
@@ -103,10 +106,10 @@ var Code = map[rune][]Symbol{
 	'§': {Dit, Dit, Dit, Dit, Dit, Dit, Dit, Dit}, // correction
 }
 
-// WriteToSymbolStream writes the content of the given string as morse symbols to the given stream.
+// WriteToSymbolStream writes the content of the given text as morse symbols to the given stream.
 // The first written symbol is always a Dit or a Da (key down), the last written symbol is always a WordBreak (key up).
-func WriteToSymbolStream(ctx context.Context, s string, symbols chan<- Symbol) {
-	normalized := strings.ToLower(s)
+func WriteToSymbolStream(ctx context.Context, symbols chan<- Symbol, text string) {
+	normalized := strings.ToLower(text)
 	wasWhitespace := true
 	var canceled bool
 	for _, r := range normalized {
@@ -150,5 +153,45 @@ func writeSymbol(ctx context.Context, symbols chan<- Symbol, symbol Symbol) bool
 		return false
 	case <-ctx.Done():
 		return true
+	}
+}
+
+// Send reads CW symbols from the given stream and transmits them using the given setKeyDown function with the given speed in WpM.
+func Send(ctx context.Context, setKeyDown func(bool), symbols <-chan Symbol, wpm int) {
+	dit := WPMToDit(wpm)
+
+	symbolEnd := time.Now().Add(-1 * time.Second)
+	keyDown := false
+	canceled := false
+
+	for {
+		select {
+		case now := <-time.After(1 * time.Microsecond):
+			if now.Before(symbolEnd) {
+				continue
+			}
+
+			symbolEnd, keyDown, canceled = decodeSymbol(ctx, symbols, dit)
+			if canceled {
+				setKeyDown(false)
+				return
+			}
+			setKeyDown(keyDown)
+		case <-ctx.Done():
+			setKeyDown(false)
+			return
+		}
+	}
+}
+
+func decodeSymbol(ctx context.Context, symbols <-chan Symbol, dit time.Duration) (time.Time, bool, bool) {
+	select {
+	case symbol := <-symbols:
+		duration := time.Duration(symbol.Weight) * dit
+		end := time.Now().Add(duration)
+		keyDown := symbol.KeyDown
+		return end, keyDown, false
+	case <-ctx.Done():
+		return time.Now(), false, true
 	}
 }

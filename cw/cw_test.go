@@ -10,7 +10,7 @@ import (
 func TestWriteToSymbolStream(t *testing.T) {
 	buf := make(chan Symbol, 1000)
 
-	WriteToSymbolStream(context.Background(), "Paris Paris", buf)
+	WriteToSymbolStream(context.Background(), buf, "Paris Paris")
 	close(buf)
 
 	symbols := make([]Symbol, 0, 56)
