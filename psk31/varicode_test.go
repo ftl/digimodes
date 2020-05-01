@@ -7,7 +7,7 @@ import (
 )
 
 func TestVaricodeUniqueness(t *testing.T) {
-	codes := make(map[uint16]bool)
+	codes := make(map[Symbol]bool)
 	for i, c := range Varicode {
 		exists := codes[c]
 		assert.False(t, exists, "code already exists %4x %d", c, i)

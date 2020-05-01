@@ -1,6 +1,7 @@
 package psk31
 
-var Varicode = []uint16{
+// Varicode contains all the PSK symbols as unpacket 16 bit words.
+var Varicode = []Symbol{
 	0xAAC0, // 0b1010 1010 1100 0000,  // 0 NUL
 	0xB6C0, // 0b1011 0110 1100 0000,  // 1 SOH
 	0xBB40, // 0b1011 1011 0100 0000,  // 2 STX
