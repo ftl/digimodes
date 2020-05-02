@@ -30,7 +30,7 @@ type Modulator struct {
 	blocks           *blocks
 	phaseSwitchCycle bool
 
-	modulationFrequency float64
+	carrierFrequency float64
 }
 
 type block interface {
@@ -39,11 +39,11 @@ type block interface {
 
 func NewModulator(frequency float64) *Modulator {
 	result := &Modulator{
-		symbols:             make(chan interface{}),
-		packed:              make(chan interface{}),
-		closed:              make(chan struct{}),
-		modulationFrequency: frequency,
-		blocks:              newBlocks(),
+		symbols:          make(chan interface{}),
+		packed:           make(chan interface{}),
+		closed:           make(chan struct{}),
+		carrierFrequency: frequency,
+		blocks:           newBlocks(),
 	}
 	result.block = result.blocks.off(false)
 	go result.pack()
@@ -195,7 +195,7 @@ func (m *Modulator) Modulate(t, a, f, p float64) (amplitude, frequency, phase fl
 		m.block = m.blocks.Next(m.packed, m.block, m.closed)
 	}
 
-	return amplitude, m.modulationFrequency, phase
+	return amplitude, m.carrierFrequency, phase
 }
 
 type blocks struct {
