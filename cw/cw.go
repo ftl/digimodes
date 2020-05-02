@@ -10,9 +10,19 @@ import (
 	"unicode"
 )
 
+// WPMToSeconds returns the duration of a dit in seconds with the given speed in WpM.
+func WPMToSeconds(wpm int) float64 {
+	return (float64(60) / float64(50*wpm))
+}
+
+// BPMToSeconds returns the duration of a dit in seconds with the given speed in BpM.
+func BPMToSeconds(bpm int) float64 {
+	return WPMToSeconds(bpm * 5)
+}
+
 // WPMToDit returns the duration of a dit with the given speed in WpM.
 func WPMToDit(wpm int) time.Duration {
-	return time.Duration(float64(60) / float64(50*wpm) * float64(time.Second))
+	return time.Duration(WPMToSeconds(wpm) * float64(time.Second))
 }
 
 // BPMToDit returns the duration of a dit with the given speed in BpM.
