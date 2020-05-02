@@ -21,12 +21,12 @@ type Modulator struct {
 
 func NewModulator(frequency float64, wpm int) *Modulator {
 	return &Modulator{
-		symbols:        make(chan interface{}),
+		symbols:        make(chan interface{}, 100),
 		closed:         make(chan struct{}),
 		pitchFrequency: frequency,
 		wpm:            wpm,
 		dit:            WPMToSeconds(wpm),
-		window:         5 / frequency,
+		window:         7.5 / frequency,
 	}
 }
 
