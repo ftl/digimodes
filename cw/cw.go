@@ -101,6 +101,7 @@ var Code = map[rune][]Symbol{
 	',':  {Da, Da, Dit, Dit, Da, Da},
 	';':  {Da, Dit, Da, Dit, Da, Dit},
 	'?':  {Dit, Dit, Da, Da, Dit, Dit},
+	'/':  {Da, Dit, Dit, Dit, Da, Dit},
 	'\'': {Dit, Da, Da, Da, Da, Dit},
 	'"':  {Dit, Da, Dit, Dit, Da, Dit},
 	'(':  {Da, Dit, Da, Da, Dit},
