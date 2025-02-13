@@ -13,6 +13,8 @@ type Modulator struct {
 	pitchFrequency float64
 	wpm            int
 	dit            float64
+	fwpm           int
+	fdit           float64
 	window         float64
 	symbolStart    float64
 	symbolEnd      float64
@@ -20,12 +22,15 @@ type Modulator struct {
 }
 
 func NewModulator(frequency float64, wpm int) *Modulator {
+	dit := WPMToSeconds(wpm)
 	return &Modulator{
-		symbols:        make(chan interface{}, 100),
+		symbols:        make(chan any, 100),
 		closed:         make(chan struct{}),
 		pitchFrequency: frequency,
 		wpm:            wpm,
-		dit:            WPMToSeconds(wpm),
+		dit:            dit,
+		fwpm:           wpm,
+		fdit:           dit,
 		window:         7.5 / frequency,
 	}
 }
@@ -33,6 +38,27 @@ func NewModulator(frequency float64, wpm int) *Modulator {
 var ErrWriteAborted = errors.New("cw: write aborted")
 
 type endOfTransmissionToken chan interface{}
+
+func (m *Modulator) SetFarnsworthWPM(fwpm int) {
+	if fwpm == 0 {
+		m.ClearFarnsworth()
+		return
+	}
+	m.fwpm = fwpm
+	m.fdit = float64(FarnsworthWPMToSeconds(m.wpm, fwpm))
+}
+
+func (m *Modulator) ClearFarnsworth() {
+	m.fwpm = m.wpm
+	m.fdit = m.dit
+}
+
+func (m *Modulator) customDit(wpm int) float64 {
+	if wpm == 0 {
+		return WPMToSeconds(m.wpm)
+	}
+	return WPMToSeconds(wpm)
+}
 
 func (m *Modulator) Close() error {
 	select {
@@ -166,7 +192,7 @@ func (m *Modulator) nextAction(now float64) (float64, bool, bool) {
 	case raw := <-m.symbols:
 		switch symbol := raw.(type) {
 		case Symbol:
-			duration := float64(symbol.Weight) * m.dit
+			duration := m.duration(symbol)
 			return now + duration, symbol.KeyDown, false
 		case endOfTransmissionToken:
 			close(symbol)
@@ -179,4 +205,15 @@ func (m *Modulator) nextAction(now float64) (float64, bool, bool) {
 	default:
 		return now + 0.000001, false, false
 	}
+}
+
+func (m *Modulator) duration(symbol Symbol) float64 {
+	var dit float64
+	switch symbol {
+	case CharBreak, WordBreak:
+		dit = m.fdit
+	default:
+		dit = m.dit
+	}
+	return float64(symbol.Weight) * dit
 }

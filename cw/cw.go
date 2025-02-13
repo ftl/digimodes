@@ -15,6 +15,16 @@ func WPMToSeconds(wpm int) float64 {
 	return (float64(60) / float64(50*wpm))
 }
 
+// FarnsworthWPMToSeconds returns the duration of a dit unit in seconds for farnsworth timing.
+// see https://morsecode.world/international/timing.html
+func FarnsworthWPMToSeconds(wpm, fwpm int) float64 {
+	dit := WPMToSeconds(wpm)
+	if fwpm == 0 {
+		return dit
+	}
+	return ((float64(60) / float64(fwpm)) - (float64(31) * dit)) / float64(19)
+}
+
 // BPMToSeconds returns the duration of a dit in seconds with the given speed in BpM.
 func BPMToSeconds(bpm int) float64 {
 	return WPMToSeconds(bpm * 5)
@@ -28,6 +38,12 @@ func WPMToDit(wpm int) time.Duration {
 // BPMToDit returns the duration of a dit with the given speed in BpM.
 func BPMToDit(bpm int) time.Duration {
 	return WPMToDit(bpm * 5)
+}
+
+// WPMToFarnsworthDit returns the duration of a dit unit for farnsworth timing.
+// see https://morsecode.world/international/timing.html
+func WPMToFarnsworthDit(wpm, fwpm int) time.Duration {
+	return time.Duration(FarnsworthWPMToSeconds(wpm, fwpm) * float64(time.Second))
 }
 
 // Symbol represents the morse symbols: dits, das and breaks.
