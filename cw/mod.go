@@ -196,14 +196,14 @@ func (m *Modulator) nextAction(now float64) (float64, bool, bool) {
 			return now + duration, symbol.KeyDown, false
 		case endOfTransmissionToken:
 			close(symbol)
-			return now + 0.000001, false, false
+			return now + 0.000_01, false, false
 		default:
 			panic(fmt.Errorf("unknown token/symbol type %T", raw))
 		}
 	case <-m.closed:
 		return now, false, true
 	default:
-		return now + 0.000001, false, false
+		return now + 0.000_01, false, false
 	}
 }
 
